@@ -1,0 +1,501 @@
+/* Global Styles Section*/
+/* This section sets the global font family */
+body,
+button,
+input,
+select {
+    font-family: Arial, sans-serif;
+}
+
+/* Reset Section */
+/* This section resets the margin and padding for all elements */
+* {
+    margin: 0;
+    padding: 0;
+}
+
+/* Body Section */
+/* This section styles the body element */
+body {
+    background-color: black;
+    /* Sets the background color of the body to black */
+    color: white;
+    /* Sets the default text color in the body to white */
+    margin: 0;
+    /* Removes the default margin from the body */
+    padding: 0;
+    /* Removes the default padding from the body */
+    justify-content: center;
+    /* Centers the content horizontally if the body is a flex container */
+}
+
+/* Image Section */
+/* This section styles the images */
+img {
+    max-width: 100%;
+    /* Ensures images don't exceed the width of their container */
+    height: auto;
+    /* Maintains the aspect ratio of images */
+    display: block;
+    /* Displays images as block elements */
+    margin: 20px auto;
+    /* Adds 20px of space above and below images and centers them horizontally */
+}
+
+/* Logo Section */
+/* This section styles the logo and its container */
+.logo,
+.container img.logo {
+    max-width: 100%;
+    /* Ensures the logo doesn't exceed the width of its container */
+    height: auto;
+    /* Maintains the aspect ratio of the logo */
+    display: block;
+    /* Displays the logo as a block element */
+    margin: 20px auto 5px;
+    /* Adds 20px of space above the logo, centers it horizontally, and adds 5px of space below */
+    margin-bottom: -10px;
+    /* Moves the logo up 10px to overlap with the element below it */
+}
+
+/* Banner Section */
+/* This section styles the banner and its container */
+.banner,
+.container img.banner {
+    max-width: 60%;
+    /* Sets the maximum width of the banner */
+    height: auto;
+    /* Maintains the aspect ratio of the banner */
+    display: block;
+    /* Displays the banner as a block element */
+    margin: 5px auto 20px;
+    /* Centers the banner horizontally and adds space below it */
+    margin-top: -10px;
+    /* Moves the banner up to overlap with the element above it */
+}
+
+/* Container Section */
+/* This section styles the main container */
+.container {
+    width: 80%;
+    /* Sets the width of the container */
+    max-width: 600px;
+    /* Sets the maximum width of the container */
+    margin: auto;
+    /* Centers the container horizontally */
+    text-align: center;
+    /* Centers the text within the container */
+}
+
+/* Task Input Section */
+/* This section styles the task input field */
+#taskInput {
+    height: 75px;
+    /* Sets the height of the input field */
+    width: 500px;
+    /* Sets the width of the input field */
+    margin-bottom: 20px;
+    /* Adds space below the input field */
+    font-size: 16px;
+    /* Sets the font size within the input field */
+    padding-top: 10px;
+    /* Adds space at the top inside the input field */
+}
+
+/* Buttons and Task List Section */
+/* This section styles the buttons and the task list */
+#addTaskButton,
+.deleteButton,
+.completeButton,
+#taskList {
+    display: block;
+    /* Displays the elements as block elements */
+    margin: 10px auto;
+    /* Centers the elements horizontally and adds space around them */
+    width: 80%;
+    /* Sets the width of the elements */
+}
+
+/* Task List Section */
+/* This section styles the task list */
+#taskList {
+    display: flex;
+    /* Displays the tasks in a row */
+    flex-direction: column;
+    align-items: center;
+    text-align: left;
+    max-width: 300px;
+}
+
+/* Task List Item Section */
+/* This section styles each task list item */
+#taskList li {
+    position: relative;
+    /* Allows absolute positioning within the task list item */
+    border: 1px solid #fff;
+    /* Adds a border around the task list item */
+    margin: 10px 0;
+    /* Adds vertical space above and below the task list item */
+    padding: 5px;
+    /* Adds space inside the task list item */
+    display: flex;
+    /* Displays the contents of the task list item in a row */
+    flex-direction: column;
+    /* Changes the direction of the row to a column */
+}
+
+/* Task List Item Text Section */
+/* This section styles the text area within each task list item */
+#taskList li textarea {
+    display: block;
+    /* Displays the textarea as a block element */
+    width: calc(100% - 10px);
+    /* Sets the width of the textarea to fill its container, minus 10px */
+    margin-top: 5px;
+    /* Adds space above the textarea */
+    height: 50px;
+    /* Sets the height of the textarea */
+}
+
+/* Unordered List Section */
+/* This section styles all unordered lists */
+ul {
+    list-style-type: none;
+    /* Removes the default list item markers */
+    padding: 0;
+    /* Removes the default padding from the list */
+    margin: 0 auto;
+    /* Centers the list horizontally */
+    text-align: center;
+    /* Centers the text within the list */
+}
+
+/* List Item Section */
+/* This section styles all list items */
+li {
+    margin: 10px 0;
+    /* Adds vertical space above and below each list item */
+    border: 1px solid #fff;
+    /* Adds a border around each list item */
+    padding: 5px;
+    /* Adds space inside each list item */
+}
+
+/* List Item Textarea Section */
+/* This section styles the textarea within each list item */
+li textarea {
+    width: calc(100% - 10px);
+    /* Sets the width of the textarea to fill its container, minus 10px */
+    margin-top: 5px;
+    /* Adds space above the textarea */
+    height: 50px;
+    /* Sets the height of the textarea */
+    display: block;
+    /* Displays the textarea as a block element */
+}
+
+/* Button Section */
+/* This section styles all buttons */
+button {
+    border: none;
+    /* Removes the default button border */
+    color: white;
+    /* Sets the text color to white */
+    padding: 10px 24px;
+    /* Adds space around the text */
+    text-align: center;
+    /* Centers the text */
+    text-decoration: none;
+    /* Removes the default text decoration */
+    display: inline-block;
+    /* Displays the button inline with other elements */
+    font-size: 16px;
+    /* Sets the font size */
+    margin: 4px 2px;
+    /* Adds space around the button */
+    transition-duration: 0.4s;
+    /* Sets the duration of transition effects */
+    cursor: pointer;
+    /* Changes the cursor to a pointer when hovering over the button */
+    border-radius: 12px;
+    /* Rounds the corners of the button */
+}
+
+/* Button Hover Section */
+/* This section styles all buttons when hovered over */
+button:hover {
+    box-shadow: 0 12px 16px 0 rgba(0, 0, 0, 0.24), 0 17px 50px 0 rgba(0, 0, 0, 0.19);
+    /* Adds a shadow effect */
+}
+
+/* Add Task Button Section */
+/* This section styles the Add Task button */
+#addTaskButton {
+    background-color: blue;
+    /* Sets the background color to blue */
+    border: none;
+    /* Removes the default button border */
+    color: white;
+    /* Sets the text color to white */
+    padding: 10px 20px;
+    /* Adds space around the text */
+    text-align: center;
+    /* Centers the text */
+    text-decoration: none;
+    /* Removes the default text decoration */
+    display: inline-block;
+    /* Displays the button inline with other elements */
+    font-size: 12px;
+    /* Sets the font size */
+    margin: 4px 2px;
+    /* Adds space around the button */
+    transition-duration: 0.4s;
+    /* Sets the duration of transition effects */
+    cursor: pointer;
+    /* Changes the cursor to a pointer when hovering over the button */
+    border-radius: 25px;
+    /* Rounds the corners of the button */
+    margin-top: 20px;
+    /* Adds space above the button */
+    margin-bottom: 50px;
+    /* Adds space below the button */
+}
+
+/* Add Task Button Hover Section */
+/* This section styles the Add Task button when hovered over */
+#addTaskButton:hover {
+    background-color: lightblue;
+    /* Changes the background color to light blue when hovered over */
+    color: black;
+    /* Changes the text color to black when hovered over */
+}
+
+/* Delete Button Section */
+/* This section styles the Delete button */
+.deleteButton {
+    background-color: red;
+    /* Sets the background color to red */
+    border: none;
+    /* Removes the default button border */
+    color: white;
+    /* Sets the text color to white */
+    padding: 10px 20px;
+    /* Adds space around the text */
+    text-align: center;
+    /* Centers the text */
+    text-decoration: none;
+    /* Removes the default text decoration */
+    display: inline-block;
+    /* Displays the button inline with other elements */
+    font-size: 12px;
+    /* Sets the font size */
+    margin: 4px 2px;
+    /* Adds space around the button */
+    transition-duration: 0.4s;
+    /* Sets the duration of transition effects */
+    cursor: pointer;
+    /* Changes the cursor to a pointer when hovering over the button */
+    border-radius: 25px;
+    /* Rounds the corners of the button */
+}
+
+/* Delete Button Hover Section */
+/* This section styles the Delete button when hovered over */
+.deleteButton:hover {
+    background-color: pink;
+    /* Changes the background color to pink when hovered over */
+    color: black;
+    /* Changes the text color to black when hovered over */
+}
+
+/* Complete Button Section */
+/* This section styles the Complete button */
+.completeButton {
+    background-color: limegreen;
+    /* Sets the background color to lime green */
+    border: none;
+    /* Removes the default button border */
+    color: white;
+    /* Sets the text color to white */
+    padding: 10px 20px;
+    /* Adds space around the text */
+    text-align: center;
+    /* Centers the text */
+    text-decoration: none;
+    /* Removes the default text decoration */
+    display: inline-block;
+    /* Displays the button inline with other elements */
+    font-size: 12px;
+    /* Sets the font size */
+    margin: 4px 2px;
+    /* Adds space around the button */
+    transition-duration: 0.4s;
+    /* Sets the duration of transition effects */
+    cursor: pointer;
+    /* Changes the cursor to a pointer when hovering over the button */
+    border-radius: 25px;
+    /* Rounds the corners of the button */
+}
+
+/* Complete Button Hover Section */
+/* This section styles the Complete button when hovered over */
+.completeButton:hover {
+    background-color: lightgreen;
+    /* Changes the background color to light green when hovered over */
+    color: black;
+    /* Changes the text color to black when hovered over */
+}
+
+/* Completed Task Section */
+/* This section styles the text of completed tasks */
+.completed-task .task-text::before {
+    content: "\2705";
+    /* Adds a checkmark before the text of completed tasks */
+    margin-right: 5px;
+    /* Adds space to the right of the checkmark */
+}
+
+/* Completed Task Text Section */
+/* This section styles the text of completed tasks */
+.completed-task-text {
+    color: green;
+    /* Changes the text color of completed tasks to green */
+}
+
+/* Task Text Section */
+/* This section styles the text of tasks */
+.task-text {
+    margin-bottom: 5px;
+    /* Adds 5px of space below the task text */
+    font-size: 20px;
+    /* Sets the font size of the task text to 20px */
+    text-align: center;
+    /* Centers the task text */
+}
+
+/* Task Buttons Section */
+/* This section styles the container for task buttons */
+.task-buttons {
+    display: flex;
+    /* Displays the task buttons in a row */
+    justify-content: space-between;
+    /* Spaces the task buttons evenly apart */
+}
+
+/* Task Timestamp Section */
+/* This section styles the timestamp for tasks */
+.task-timestamp {
+    font-size: 12px;
+    /* Sets the font size of the task timestamp to 12px */
+    color: gray;
+    /* Sets the color of the task timestamp to gray */
+    text-align: center;
+    /* Centers the task timestamp */
+}
+
+/* Notes Button Section */
+/* This section styles the Notes button */
+.notesButton {
+    background-color: yellow;
+    /* Sets the background color of the Notes button to yellow */
+    border: none;
+    /* Removes the default button border */
+    color: black;
+    /* Sets the text color of the Notes button to black */
+    padding: 5px 10px;
+    /* Adds space around the text of the Notes button */
+    text-align: center;
+    /* Centers the text of the Notes button */
+    text-decoration: none;
+    /* Removes the default text decoration */
+    display: block;
+    /* Displays the Notes button as a block element */
+    font-size: 12px;
+    /* Sets the font size of the Notes button to 12px */
+    margin: 10px auto;
+    /* Adds 10px of space above and below the Notes button and centers it horizontally */
+    transition-duration: 0.4s;
+    /* Sets the duration of transition effects */
+    cursor: pointer;
+    /* Changes the cursor to a pointer when hovering over the Notes button */
+    border-radius: 12px;
+    /* Rounds the corners of the Notes button */
+    float: left;
+    /* Floats the Notes button to the left */
+}
+
+/* Notes Button Hover Section */
+/* This section styles the Notes button when hovered over */
+.notesButton:hover {
+    background-color: lightyellow;
+    /* Changes the background color of the Notes button to light yellow when hovered over */
+}
+
+/* Note Delete Button Section */
+/* This section styles the Note Delete button */
+.note-delete-button {
+    color: red;
+    /* Sets the color of the Note Delete button to red */
+    cursor: pointer;
+    /* Changes the cursor to a pointer when hovering over the Note Delete button */
+    margin-left: 10px;
+    /* Adds 10px of space to the left of the Note Delete button */
+}
+
+/* Note Delete Button Section */
+/* This section styles the Note Delete button */
+.note-delete-button {
+    background-color: maroon;
+    /* Sets the background color of the Note Delete button to maroon */
+    border: none;
+    /* Removes the default button border */
+    color: white;
+    /* Sets the text color of the Note Delete button to white */
+    padding: 5px 10px;
+    /* Adds space around the text of the Note Delete button */
+    text-align: center;
+    /* Centers the text of the Note Delete button */
+    text-decoration: none;
+    /* Removes the default text decoration */
+    display: inline-block;
+    /* Displays the Note Delete button inline with other elements */
+    font-size: 12px;
+    /* Sets the font size of the Note Delete button to 12px */
+    margin-left: 10px;
+    /* Adds 10px of space to the left of the Note Delete button */
+    transition-duration: 0.4s;
+    /* Sets the duration of transition effects */
+    cursor: pointer;
+    /* Changes the cursor to a pointer when hovering over the Note Delete button */
+    border-radius: 12px;
+    /* Rounds the corners of the Note Delete button */
+}
+
+/* Note Delete Button Hover Section */
+/* This section styles the Note Delete button when hovered over */
+.note-delete-button:hover {
+    background-color: red;
+    /* Changes the background color of the Note Delete button to red when hovered over */
+}
+
+/* Completed Task First of Type Section */
+/* This section styles the first completed task */
+.completed-task:first-of-type {
+    margin-top: 20px;
+    /* Adds 20px of space above the first completed task */
+    position: relative;
+    /* Sets the position of the first completed task to relative */
+}
+
+/* Task Separator Section */
+/* This section styles the task separator */
+.task-separator {
+    width: 500px;
+    /* Sets the width of the task separator to 500px */
+    height: 10px;
+    /* Sets the height of the task separator to 10px */
+    background-color: white;
+    /* Sets the background color of the task separator to white */
+    margin: 50px 0;
+    /* Adds 50px of space above and below the task separator */
+}

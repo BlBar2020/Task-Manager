@@ -1,0 +1,42 @@
+<!-- Defines the document type -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- Specifies the character encoding for the HTML document -->
+    <meta charset="UTF-8">
+    <!-- Defines the title of the document -->
+    <title>Task Manager</title>
+    <!-- Links the CSS stylesheet -->
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+    <!-- Main container for the content -->
+    <div class="container">
+        <!-- Logo image -->
+        <img src="BlakeBaron_logo_small.png" alt="Logo" class="logo">
+        <!-- Title banner image -->
+        <img src="TaskManagerBanner.png" alt="Title" class="banner">
+        <!-- Input field for new tasks -->
+        <input type="text" id="taskInput" placeholder="New task">
+        <br>
+        <!-- Label for the priority select dropdown -->
+        <span style="color: white; margin-right: 10px;">Choose a Priority Level</span>
+        <!-- Dropdown for selecting the priority level of a task -->
+        <select id="prioritySelect">
+            <option value="🚨 High Priority">🚨 High Priority</option>
+            <option value="🚧 Medium Priority">🚧 Medium Priority</option>
+            <option value="📗 Low/New Feature">📗 Low/New Feature</option>
+        </select>
+        <!-- Button to add a new task -->
+        <button id="addTaskButton" onclick="addTask()">Add Task</button>
+        <br>
+        <!-- Unordered list to display the tasks -->
+        <ul id="taskList"></ul>
+    </div>
+    <!-- Links the JavaScript file -->
+    <script src="TaskManager.js"></script>
+</body>
+
+</html>
