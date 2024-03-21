@@ -16,12 +16,14 @@ app.use(express.json());
 app.use(express.static('/Users/Blake/Desktop/Portfolio/Productivity/Task manager'));
 
 // Create a new SQLite database connection
-let db = new sqlite3.Database('./tasks.db', sqlite3.OPEN_READWRITE, (err) => {
-    // If there's an error, log it and return
-    if (err) return console.error(err.message);
-    // Log a success message if connection is successful
-    console.log('Connected to the mytask database.');
+let db = new sqlite3.Database('./tasks.db', sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
+    if (err) {
+        console.error(err.message);
+        return;
+    }
+    console.log('Connected to the tasks database.');
 });
+
 
 // Define a GET endpoint for '/api/tasks'
 app.get('/api/tasks', (req, res) => {
