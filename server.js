@@ -2,6 +2,7 @@
 const cors = require('cors');
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
 
 // Create an express application
 const app = express();
@@ -13,7 +14,7 @@ app.use(cors());
 // Use express.json middleware to parse JSON request bodies
 app.use(express.json());
 // Use express.static middleware to serve static files from a specific directory
-app.use(express.static('/Users/Blake/Desktop/Portfolio/Productivity/Task manager'));
+app.use(express.static('/Users/Blake/Desktop/Portfolio/Productivity/Task_Manager'));
 
 // Create a new SQLite database connection
 let db = new sqlite3.Database('./tasks.db', sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
@@ -187,6 +188,12 @@ app.post('/api/task/:id/note', (req, res) => {
         res.json({ "message": "note added", id: this.lastID });
     });
 });
+
+// Catch-all handler to serve index.html for any other route
+app.get('*', (req, res) => {
+    res.sendFile(path.join('/Users/Blake/Desktop/Portfolio/Productivity/Task_Manager', 'index.html'));
+});
+
 
 // Start the server and listen on the specified port
 app.listen(port, () => {
