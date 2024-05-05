@@ -1,0 +1,6 @@
+# Ignore database file
+tasks.db
+
+# Ignore logs
+server.log
+server-ready.tmp
