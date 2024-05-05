@@ -1,406 +1,408 @@
 // Enforces strict mode to catch common JavaScript pitfalls
 "use strict";
 
-// Fetch tasks when the document content has been loaded
-document.addEventListener('DOMContentLoaded', fetchTasks);
-
-// TaskManager class definition
+// TaskManager class definition for managing tasks and WebSocket communications
 class TaskManager {
-    // Constructor for the TaskManager class
     constructor() {
-        // Initialize tasks and completedTasks from localStorage or as empty arrays
-        this.tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        this.completedTasks = JSON.parse(localStorage.getItem('completedTasks')) || [];
+        this.tasks = [];
+        this.initializeWebSocket(); // Ensures WebSocket is only connected once
     }
 
-    // Method to save tasks and completedTasks to localStorage
-    saveTasks() {
-        localStorage.setItem('tasks', JSON.stringify(this.tasks));
-        localStorage.setItem('completedTasks', JSON.stringify(this.completedTasks));
+    // WebSocket initialization
+    initializeWebSocket() {
+        if (!this.socket) {
+            this.connectWebSocket();
+        }
     }
 
-    // Method to add a task
-    addTask(taskText, priority) {
-        // Create a new task object
-        const task = {
-            text: taskText,
-            timestamp: new Date().toLocaleString(),
-            notes: [],
-            priority: priority
+    // WebSocket connection
+    connectWebSocket() {
+        console.log('Attempting to connect WebSocket');
+        this.socket = new WebSocket('ws://localhost:3000');
+        this.socket.onopen = () => console.log('WebSocket is open now.');
+        this.socket.onerror = (event) => console.error('WebSocket error observed:', event);
+        this.socket.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+                this.processMessage(message);
+            } catch (error) {
+                console.error('Error parsing message:', error);
+            }
         };
-        // Add the task to the tasks array
-        this.tasks.push(task);
-        // Save the tasks to localStorage
-        this.saveTasks();
+        this.socket.onclose = (event) => console.log('WebSocket is closed now:', event.reason);
     }
 
-    // Method to list all tasks
-    listTasks() {
-        // Return a new array that combines tasks and completedTasks
-        return [...this.tasks, ...this.completedTasks];
-    }
-
-    // Method to delete a task
-    deleteTask(task) {
-        // Find the index of the task in the tasks array
-        const index = this.tasks.indexOf(task);
-        // If the task is found, remove it from the tasks array
-        if (index > -1) {
-            this.tasks.splice(index, 1);
+    // Fetch tasks from the server
+    fetchTasks() {
+        if (this.socket.readyState === WebSocket.OPEN) {
+            this.sendMessage({ type: 'fetchTasks' });
         } else {
-            // If the task is not found in the tasks array, find it in the completedTasks array
-            const completedIndex = this.completedTasks.indexOf(task);
-            // If the task is found, remove it from the completedTasks array
-            if (completedIndex > -1) {
-                this.completedTasks.splice(completedIndex, 1);
+            console.log('WebSocket not open. Fetching tasks delayed.');
+            setTimeout(() => this.fetchTasks(), 100); // Retry after a short delay
+        }
+    }
+
+    // WebSocket message handling
+    handleMessage(event) {
+        console.log("Received WebSocket message:", event.data); // Log the entire raw data
+        let data;
+        try {
+            data = JSON.parse(event.data);
+            console.log('Parsed WebSocket message:', data); // Log parsed data
+        } catch (error) {
+            console.error('Error parsing WebSocket message:', error, 'Received data:', event.data);
+            return;
+        }
+        this.processMessage(data);
+    }
+    
+    // Process WebSocket messages
+    processMessage(data) {
+        switch (data.type) {
+            case 'connection':
+                console.log('WebSocket connection established.');
+                break;
+            case 'update':
+                this.updateTasks(data.tasks);
+                break;
+            case 'taskAdded':
+                console.log(`Task added with ID: ${data.id}`);
+                this.fetchTasks();  // Fetch all tasks again to update UI
+                break;
+            case 'priorityUpdated':
+                console.log(`Priority updated for task ID ${data.taskId} to ${data.priority}`);
+                this.fetchTasks();  // Optionally re-fetch tasks to update the display
+                break;
+            case 'taskDeleted':
+                console.log(`Task deleted with ID: ${data.taskId}`);
+                this.fetchTasks(); // Refresh the tasks list
+                break;
+            case 'taskUpdated':
+                console.log(`Task completion status updated for ID: ${data.taskId}`);
+                this.fetchTasks(); // Optionally refresh the tasks list
+                break;
+            case 'noteAdded':
+                console.log(`Note added with ID: ${data.noteId} for Task ID: ${data.taskId}`);
+                this.fetchTasks(); // Refresh the tasks list to show the new note
+                break;
+            case 'noteDeleted':
+                console.log(`Note deleted with ID: ${data.noteId} for Task ID: ${data.taskId}`);
+                this.fetchTasks(); // Refresh the tasks list to reflect the deletion
+                break;
+            case 'error':
+                // Log the error or handle it as needed without showing it to the user
+                console.warn('Server reported an error:', data.error);
+                break;
+            default:
+                console.warn('Received unhandled message type:', data.type, 'with full data:', data);
+                // Optionally send diagnostic data back to the server or to a logging service
+                break;
+        }
+    }
+    
+    // Update tasks and display them
+    updateTasks(tasks) {
+        console.log("Tasks received for update:", tasks); // Log the tasks before processing
+        this.tasks = tasks.map(task => {
+            return {
+                ...task,
+                notes: Array.isArray(task.notes) ? task.notes : JSON.parse(task.notes || '[]') // Ensure notes are correctly parsed
+            };
+        });
+        console.log("Tasks processed for display:", this.tasks); // Log tasks after processing
+        this.displayTasks();
+    }
+    
+    // Send messages to the server
+    sendMessage(message) {
+        if (this.socket.readyState === WebSocket.OPEN) {
+            this.socket.send(JSON.stringify(message));
+        } else {
+            console.error('WebSocket is not open');
+        }
+    }
+    // Additional functions interacting via WebSocket
+    addTask(taskText, priority) {
+        if (taskText.trim() === '') return;
+        this.sendMessage({
+            type: 'addTask',
+            task: { text: taskText, priority: priority }
+        });
+    }
+
+    // Display tasks in the UI
+    displayTasks() {
+        const taskList = document.getElementById('taskList');
+        taskList.innerHTML = ''; // Clear current list before appending new items
+    
+        let completedTaskAdded = false; // Track when a separator is added, should be outside the task loop
+    
+        // Sort tasks by completion status and then by priority
+        this.tasks.sort((a, b) => {
+            if (a.is_completed !== b.is_completed) {
+                return a.is_completed ? 1 : -1;
             }
+            const priorities = ['🚨 High Priority', '🚧 Medium Priority', '📗 Low/New Feature'];
+            return priorities.indexOf(a.priority) - priorities.indexOf(b.priority);
+        });
+    
+        this.tasks.forEach(task => {
+            const li = document.createElement('li');
+            li.className = task.is_completed ? 'completed-task' : '';
+    
+            // Combine priority and task text
+            const fullTaskText = `${task.priority} - ${task.text}`;
+            const timestampDiv = this.createDivWithClassAndContent('task-timestamp', task.timestamp);
+            const taskDiv = this.createDivWithClassAndContent('task-text', fullTaskText);
+            if (task.is_completed) {
+                taskDiv.classList.add('completed-task-text');
+            }
+    
+            li.appendChild(timestampDiv);
+            li.appendChild(taskDiv);
+    
+            // Change Priority Button centered below the task text
+            const changePriorityButton = this.createButtonWithClassAndOnClick('changePriorityButton', () => this.openChangePriorityModal(task.id), 'Change Priority');
+            li.appendChild(changePriorityButton);
+    
+            // Container for Complete and Delete Buttons
+            const actionButtonContainer = document.createElement('div');
+            actionButtonContainer.style.display = 'flex';
+            actionButtonContainer.style.justifyContent = 'space-between'; // Ensure alignment
+            actionButtonContainer.appendChild(this.createButtonWithClassAndOnClick('deleteButton', () => this.deleteTask(task.id), 'Delete'));
+            actionButtonContainer.appendChild(this.createButtonWithClassAndOnClick('toggleCompleteButton', () => this.toggleCompleteTask(task.id), task.is_completed ? 'Mark Incomplete' : 'Mark Complete'));
+            li.appendChild(actionButtonContainer);
+    
+            // Add Notes Button centered below the action buttons
+            const addNoteButton = this.createButtonWithClassAndOnClick('addNoteButton', () => this.openAddNoteModal(task.id), 'Add Note');
+            li.appendChild(addNoteButton);
+    
+            // Add a section for notes
+            const notesSection = this.createNotesSection(task);
+            li.appendChild(notesSection);
+    
+            // Handle the completion separator
+            if (!completedTaskAdded && task.is_completed) {
+                const separator = document.createElement('div');
+                separator.className = 'task-separator';
+                taskList.appendChild(separator);
+                completedTaskAdded = true;
+            }
+    
+            taskList.appendChild(li);
+        });
+    
+        console.log('Displayed tasks updated'); // Debug: Confirm tasks have been displayed
+    }
+    
+    // Open Note Modal
+    openAddNoteModal(taskId) {
+        const modal = document.getElementById('addNoteModal');  // Make sure this ID matches your HTML
+        if (modal) {
+            modal.style.display = 'block';
+        
+            // Clear the input when opening the modal
+            const noteInput = document.getElementById('noteInput'); // Correct ID for the input
+            if (noteInput) noteInput.value = '';
+        
+            // Setup Save Note Button
+            const saveButton = document.getElementById('saveNoteButton');
+            if (saveButton) {
+                saveButton.onclick = () => {
+                    const noteContent = noteInput.value;
+                    this.addNoteToTask(taskId, noteContent);
+                    modal.style.display = 'none'; // Close modal after saving
+                };
+            }
+    
+            // Setup Close Button
+            const closeButton = modal.querySelector('.close-button');
+            if (closeButton) {
+                closeButton.onclick = () => {
+                    modal.style.display = 'none';
+                };
+            }
+        } else {
+            console.error('Modal element not found');
         }
-        // Save the tasks to localStorage
-        this.saveTasks();
+    }
+    
+    // Create a section for notes
+    createNotesSection(task) {
+        const notesSection = document.createElement('div');
+        notesSection.className = 'notes-section';
+        
+        // Iterate over notes if they exist
+        if (task.notes && task.notes.length > 0) {
+            task.notes.forEach(note => {
+                if (note.id && note.content) { // Check if the note is valid
+                    const noteDiv = document.createElement('div');
+                    noteDiv.className = 'note-container'; // Add a class for styling
+                    noteDiv.textContent = note.content;
+    
+                    const deleteNoteButton = this.createButtonWithClassAndOnClick('deleteNoteButton', () => this.deleteNote(task.id, note.id), 'Delete Note');
+                    const deleteButtonContainer = document.createElement('div');
+                    deleteButtonContainer.className = 'delete-note-button-container'; // Add a class for styling
+                    deleteButtonContainer.appendChild(deleteNoteButton);
+    
+                    noteDiv.appendChild(deleteButtonContainer);
+                    notesSection.appendChild(noteDiv);
+                }
+            });
+        }
+    
+        return notesSection;
+    }
+    
+    // Delete Task
+    deleteTask(taskId) {
+        this.sendMessage({
+            type: 'deleteTask',
+            taskId: taskId
+        });
     }
 
-    // Method to mark a task as completed
-    completeTask(task) {
-        // Find the index of the task in the tasks array
-        const index = this.tasks.indexOf(task);
-        // If the task is found, remove it from the tasks array and add it to the completedTasks array
-        if (index > -1) {
-            this.tasks.splice(index, 1);
-            this.completedTasks.push(task);
+    // Add Note to Task
+    addNoteToTask(taskId, noteContent) {
+        if (noteContent.trim() === '') {
+            console.error('Note content is empty');
+            return;
         }
-        // Save the tasks to localStorage
-        this.saveTasks();
+        this.sendMessage({
+            type: 'addNote',
+            note: { taskId: taskId, content: noteContent }
+        });
+    }
+    
+    // Delete Note
+    deleteNote(taskId, noteId) {
+        this.sendMessage({
+            type: 'deleteNote',
+            taskId: taskId,
+            noteId: noteId
+        });
     }
 
-    // Method to add a note to a task
-    addNoteToTask(taskId, note) {
-        // Find the task by its id
+    // Change Task Priority
+    changeTaskPriority(taskId, newPriority) {
+        if (!newPriority) {
+            console.error('Priority is not provided');
+            return;
+        }
+        this.sendMessage({
+            type: 'changePriority',
+            taskId: taskId,
+            priority: newPriority
+        });
+    }
+
+    // Toggle Task Completion
+    toggleCompleteTask(taskId) {
+        // Find the task to get its current completion status
         const task = this.tasks.find(t => t.id === taskId);
-        // If the task is found, add the note to its notes array
-        if (task) {
-            task.notes.push(note);
+        if (!task) {
+            console.error('Task not found:', taskId);
+            return;
         }
-        // Save the tasks to localStorage
-        this.saveTasks();
-    }
-
-    // Method to delete a note from a task
-    deleteNoteFromTask(taskText, noteId) {
-        // Find the task by its text
-        const task = this.tasks.find(t => t.text === taskText);
-        // If the task is found, find the note by its id
-        if (task) {
-            const noteIndex = task.notes.findIndex(note => note.id === noteId);
-            // If the note is found, remove it from the task's notes array
-            if (noteIndex > -1) {
-                task.notes.splice(noteIndex, 1);
-            }
-        }
-        // Save the tasks to localStorage
-        this.saveTasks();
-    }
-
-    // Method to toggle a task's completion status
-    toggleCompleteTask(taskText) {
-        // Find the task by its text
-        const task = this.listTasks().find(t => t.text === taskText);
-        // If the task is found in the tasks array, remove it and add it to the completedTasks array
-        if (this.tasks.includes(task)) {
-            this.tasks.splice(this.tasks.indexOf(task), 1);
-            this.completedTasks.push(task);
-        }
-        // If the task is found in the completedTasks array, remove it and add it to the tasks array
-        else if (this.completedTasks.includes(task)) {
-            this.completedTasks.splice(this.completedTasks.indexOf(task), 1);
-            this.tasks.push(task);
-        }
-        // Save the tasks to localStorage
-        this.saveTasks();
-    }
-}
-
-// Create a new instance of TaskManager
-const myTaskManager = new TaskManager();
-// Display tasks on page load
-displayTasks();
-
-// Function to fetch tasks from the server
-function fetchTasks() {
-    // Send a GET request to the server
-    fetch('/api/tasks')
-        .then(response => response.json()) // Parse the response as JSON
-        .then(data => {
-            // If data is received, update the tasks and completedTasks in myTaskManager
-            if (data && data.data) {
-                myTaskManager.tasks = data.data.filter(task => !task.is_completed);
-                myTaskManager.completedTasks = data.data.filter(task => task.is_completed);
-                // Display the updated tasks
-                displayTasks();
-            }
-        })
-        .catch(error => console.error('Error fetching tasks:', error)); // Log any errors
-}
-
-// Function to add a new task
-function addTask() {
-    // Get the task input and priority select elements
-    const taskInput = document.getElementById('taskInput');
-    const prioritySelect = document.getElementById('prioritySelect');
-    // If the task input has a value, send a POST request to the server
-    if (taskInput.value) {
-        fetch('/api/task', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: taskInput.value, priority: prioritySelect.value })
-        })
-            .then(response => response.json()) // Parse the response as JSON
-            .then(() => {
-                // Clear the task input and fetch the updated tasks
-                taskInput.value = '';
-                fetchTasks();
-            })
-            .catch(error => console.error('Error adding task:', error)); // Log any errors
-    }
-}
-
-// Function to delete a task
-function deleteTask(taskText) {
-    // Find the task by its text
-    const task = myTaskManager.listTasks().find(t => t.text === taskText);
-    // If the task is found, send a DELETE request to the server
-    if (task) {
-        fetch(`/api/task/${task.id}`, { method: 'DELETE' })
-            .then(() => fetchTasks()) // Fetch the updated tasks
-            .catch(error => console.error('Error deleting task:', error)); // Log any errors
-    }
-}
-
-// Function to add a note to a task
-function addNoteToTask(taskId, noteContent) {
-    // If the note content is empty, log an error and return
-    if (noteContent.trim() === '') {
-        console.error('Note content is empty');
-        return;
-    }
-    // Send a POST request to the server
-    fetch(`/api/task/${taskId}/note`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ note: noteContent })
-    })
-        .then(response => response.json()) // Parse the response as JSON
-        .then(data => {
-            // If data is received, add the note to the task and display the updated tasks
-            if (data && data.id) {
-                myTaskManager.addNoteToTask(taskId, { id: data.id, content: noteContent });
-                displayTasks();
-            }
-        })
-        .catch(error => console.error('Error adding note:', error)); // Log any errors
-}
-
-// Function to delete a note
-function deleteNote(taskId, noteId) {
-    // Send a DELETE request to the server
-    fetch(`/api/note/${taskId}/${noteId}`, { method: 'DELETE' })
-        .then(() => {
-            // Remove the note element from the DOM and fetch the updated tasks
-            const noteElement = document.getElementById(`note-${taskId}-${noteId}`);
-            if (noteElement) noteElement.remove();
-            fetchTasks();
-        })
-        .catch(error => console.error('Error deleting note:', error)); // Log any errors
-}
-
-// Function to mark a task as completed
-function completeTask(taskText) {
-    // Find the task by its text
-    const task = myTaskManager.listTasks().find(t => t.text === taskText);
-    // If the task is found, mark it as completed and display the updated tasks
-    if (task) myTaskManager.completeTask(task);
-    displayTasks();
-}
-
-// Function to toggle a task's completion status
-function toggleCompleteTask(taskText) {
-    // Find the task by its text
-    const task = myTaskManager.listTasks().find(t => t.text === taskText);
-    // If the task is found, send a PUT request to the server
-    if (task) {
-        fetch(`/api/task/${task.id}/complete`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ completed: task.is_completed ? 0 : 1 })
-        })
-            .then(() => fetchTasks()) // Fetch the updated tasks
-            .catch(error => console.error('Error updating task:', error)); // Log any errors
-    }
-}
-
-/**
- * Creates a div element with a specified class and content.
- *
- * @param {string} className - The class to be assigned to the div.
- * @param {string} content - The text content to be added to the div.
- * @returns {HTMLElement} The created div element.
- */
-function createDivWithClassAndContent(className, content) {
-    // Create a new div element
-    const div = document.createElement('div');
-
-    // Assign the specified class to the div
-    div.className = className;
-
-    // Set the text content of the div
-    div.textContent = content;
-
-    // Return the created div
-    return div;
-}
-
-/**
- * Creates a button element with a specified class and onclick event handler.
- *
- * @param {string} className - The class to be assigned to the button.
- * @param {Function} onClick - The function to be executed when the button is clicked.
- * @returns {HTMLElement} The created button element.
- */
-function createButtonWithClassAndOnClick(className, onClick) {
-    // Create a new button element
-    const button = document.createElement('button');
-
-    // Assign the specified class to the button
-    button.className = className;
-
-    // Set the onclick event handler of the button
-    button.onclick = onClick;
-
-    // Return the created button
-    return button;
-}
-
-// Function to display tasks
-function displayTasks() {
-    // Get the task list element
-    const taskList = document.getElementById('taskList');
-    // Clear the task list
-    taskList.innerHTML = '';
-
-    // Sort the tasks by completion status and priority
-    const sortedTasks = myTaskManager.listTasks().sort((a, b) => {
-        // Completed tasks go to the end
-        if (myTaskManager.completedTasks.includes(a)) return 1;
-        if (myTaskManager.completedTasks.includes(b)) return -1;
-        // High priority tasks go to the start
-        if (a.priority === '🚨 High Priority' && b.priority !== '🚨 High Priority') return -1;
-        if (b.priority === '🚨 High Priority' && a.priority !== '🚨 High Priority') return 1;
-        // Medium priority tasks go before low priority tasks
-        if (a.priority === '🚧 Medium Priority' && b.priority === '📗 Low/New Feature') return -1;
-        if (b.priority === '🚧 Medium Priority' && a.priority === '📗 Low/New Feature') return 1;
-        // If none of the above conditions are met, don't change the order
-        return 0;
-    });
-
-    let completedTaskAdded = false; // Define the completedTaskAdded variable
-
-// For each task
-sortedTasks.forEach(taskObj => {
-    // Create a list item
-    const li = document.createElement('li');
-    // If the task is completed, add a 'completed-task' class
-    li.className = taskObj.is_completed ? 'completed-task' : '';
-
-    // Create a div for the timestamp and a div for the task text
-    const timestampDiv = createDivWithClassAndContent('task-timestamp', taskObj.timestamp);
-    const taskDiv = createDivWithClassAndContent('task-text', taskObj.priority + ' ' + taskObj.text);
-    // If the task is completed, add a 'completed-task-text' class
-    if (taskObj.is_completed) taskDiv.classList.add('completed-task-text');
-
-    // Append the timestamp and task divs to the list item
-    li.appendChild(timestampDiv);
-    li.appendChild(taskDiv);
-
-    // If the task has notes
-    if (taskObj.notes && taskObj.notes.length > 0) {
-        // Create a list for the notes
-        const notesUl = document.createElement('ul');
-        // For each note
-        taskObj.notes.forEach(note => {
-            // Create a list item
-            const noteLi = document.createElement('li');
-            // Set the id and text content
-            noteLi.id = `note-${taskObj.id}-${note.id}`;
-            noteLi.textContent = note.content;
-
-            // If the task is not completed
-            if (!taskObj.is_completed) {
-                // Create a delete button for the note
-                const deleteNoteButton = createButtonWithClassAndOnClick('note-delete-button', () => deleteNote(taskObj.id, note.id));
-                deleteNoteButton.textContent = 'Delete Note';
-                // Append the delete button to the note list item
-                noteLi.appendChild(deleteNoteButton);
-            }
-
-            // Append the note list item to the notes list
-            notesUl.appendChild(noteLi);
+    
+        // Toggle the completion status
+        const newCompletedStatus = !task.is_completed;
+    
+        // Send the updated status to the server
+        this.sendMessage({
+            type: 'toggleCompleteTask',
+            taskId: taskId,
+            completed: newCompletedStatus ? 1 : 0  // Ensuring it sends 1 or 0
         });
-
-        // Append the notes list to the task list item
-        li.appendChild(notesUl);
+    }
+    
+    
+    // Helper methods
+    createDivWithClassAndContent(className, content) {
+        const div = document.createElement('div');
+        div.className = className;
+        div.textContent = content;
+        return div;
     }
 
-    // If the task is not completed
-    if (!taskObj.is_completed) {
-        // Create an input field and a button for adding notes
-        const notesInput = document.createElement('input');
-        notesInput.type = 'text';
-        notesInput.placeholder = 'Add a note';
+    // Helper method to create a button with a class and an onClick handler
+    createButtonWithClassAndOnClick(className, onClick, text) {
+        const button = document.createElement('button');
+        button.className = className;
+        button.textContent = text;
+        button.onclick = onClick;
+        return button;
+    }
 
-        const notesButton = createButtonWithClassAndOnClick('notesButton', () => {
-            // If the input field has a value
-            if (notesInput.value) {
-                // Add a note to the task
-                addNoteToTask(taskObj.id, notesInput.value);
-                // Clear the input field
-                notesInput.value = '';
-            }
+    // Method to append radio buttons to the modal
+    appendRadioButtons(modal, task) {
+        const container = modal.querySelector('.radios-container');
+        container.innerHTML = ''; // Clear existing content
+    
+        const priorities = ['🚨 High Priority', '🚧 Medium Priority', '📗 Low/New Feature'];
+        priorities.forEach(priority => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'radio-container';
+
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = 'priority';
+            radio.value = priority;
+            radio.id = priority; // Unique ID for the label
+            radio.checked = (task && task.priority === priority);
+
+            const label = document.createElement('label');
+            label.htmlFor = priority;
+            label.textContent = priority;
+
+            wrapper.appendChild(radio);
+            wrapper.appendChild(label);
+            container.appendChild(wrapper);
         });
-        notesButton.textContent = 'Add Note';
-
-        // Append the input field and button to the task list item
-        li.appendChild(notesInput);
-        li.appendChild(notesButton);
     }
 
-    // Create a div for the task buttons
-    const buttonsDiv = document.createElement('div');
-    buttonsDiv.className = 'task-buttons';
+    // Modification to the method that opens the modal
+    openChangePriorityModal(taskId) {
+        const task = this.tasks.find(task => task.id === taskId);
+        if (!task) {
+            console.error('Task not found');
+            return;
+        }
 
-    // Create a delete button
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Delete'; // Set the button text
-    deleteButton.className = 'deleteButton'; // Set the class name
-    deleteButton.onclick = () => deleteTask(taskObj.text); // Set the onclick function to delete the task
-    buttonsDiv.appendChild(deleteButton); // Add the delete button to the buttons div
+        const modal = document.getElementById('priorityModal');
+        modal.style.display = 'block';
 
-    // Create a complete button
-    const completeButton = document.createElement('button');
-    completeButton.className = 'completeButton'; // Set the class name
-    completeButton.textContent = taskObj.is_completed ? 'Incomplete' : 'Complete'; // Set the button text based on the task completion status
-    completeButton.onclick = () => toggleCompleteTask(taskObj.text); // Set the onclick function to toggle the task completion status
-    buttonsDiv.appendChild(completeButton); // Add the complete button to the buttons div
+        this.appendRadioButtons(modal, task);
 
-    li.appendChild(buttonsDiv); // Add the buttons div to the list item
+        const saveButton = document.getElementById('savePriorityButton');
+        saveButton.onclick = () => {
+            const selectedPriority = document.querySelector('input[name="priority"]:checked').value;
+            this.changeTaskPriority(taskId, selectedPriority);
+            modal.style.display = 'none'; // Close modal after saving
+        };
 
-    // If the task is completed and the completed task separator has not been added yet
-    if (taskObj.is_completed && !completedTaskAdded) {
-        const separator = document.createElement('div'); // Create a new div element for the separator
-        separator.className = 'task-separator'; // Set the class name
-        taskList.appendChild(separator); // Add the separator to the task list
-        completedTaskAdded = true; // Set the flag to indicate that the completed task separator has been added
+        const closeButton = document.querySelector('.modal .close-button');
+        closeButton.onclick = () => {
+            modal.style.display = 'none';
+        };
     }
+    
+    // Close Modal
+    closeModal() {
+        document.getElementById('priorityModal').style.display = 'none';
+    }
+}
 
-    // Append the task list item to the task list
-    taskList.appendChild(li);
+// Initialize the TaskManager and set up the event listener
+document.addEventListener('DOMContentLoaded', () => {
+    const myTaskManager = new TaskManager();
+    document.getElementById('addTaskButton').addEventListener('click', () => {
+        const taskInput = document.getElementById('taskInput');
+        const taskText = taskInput.value;
+        const priority = document.getElementById('prioritySelect').value;
+        if (taskText.trim() !== '') {
+            myTaskManager.addTask(taskText, priority);
+            taskInput.value = '';  // Clear the input field after sending the task
+        }
+    });    
 });
-}
