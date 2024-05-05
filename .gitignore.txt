@@ -1,1 +1,3 @@
 tasks.db
+server.log
+server-ready.tmp
