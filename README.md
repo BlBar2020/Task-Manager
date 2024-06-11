@@ -1,3 +1,7 @@
+## Branch Update
+
+Please note that we have transitioned our default branch from `main` to `master`. All future updates and commits will be made to the `master` branch.
+
 # Task Manager
 
 A web application designed to help manage tasks with different priorities, enhanced by a real-time interactive interface using WebSockets. This application is ideal for tracking tasks and their completion status without the need to reload the page.
