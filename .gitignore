@@ -1,0 +1,23 @@
+# Node modules
+node_modules/
+
+# Production build
+dist/
+
+# Log files
+server.log
+
+# Temporary files
+*.tmp
+
+# Database files
+tasks.db
+
+# Environment variables
+.env
+
+# MacOS specific files
+.DS_Store
+
+# Other system-specific files
+Thumbs.db
